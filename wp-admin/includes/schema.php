@@ -553,6 +553,16 @@ function populate_options() {
 
 	// 4.3.0
 	'finished_splitting_shared_terms' => 1,
+
+ 	// 4.4.0
+ 	'medium_large_size_w' => 768,
+ 	'medium_large_size_h' => 0,
+
+	// 4.9.6
+	'wp_page_for_privacy_policy'      => 0,
+
+		// 4.9.8
+		'show_comments_cookies_opt_in'    => 0,
 	);
 
 	// 3.3
@@ -613,7 +623,7 @@ function populate_options() {
 		'can_compress_scripts', 'page_uris', 'update_core', 'update_plugins', 'update_themes', 'doing_cron',
 		'random_seed', 'rss_excerpt_length', 'secret', 'use_linksupdate', 'default_comment_status_page',
 		'wporg_popular_tags', 'what_to_show', 'rss_language', 'language', 'enable_xmlrpc', 'enable_app',
-		'embed_autourls', 'default_post_edit_rows',
+		'embed_autourls', 'default_post_edit_rows', 'gzipcompression', 'advanced_edit'
 	);
 	foreach ( $unusedoptions as $option )
 		delete_option($option);
@@ -626,30 +636,9 @@ function populate_options() {
 	// Delete obsolete magpie stuff.
 	// $wpdb->query("DELETE FROM $wpdb->options WHERE option_name REGEXP '^rss_[0-9a-f]{32}(_ts)?$'");
 
-	/*
-	 * Deletes all expired transients. The multi-table delete syntax is used
-	 * to delete the transient record from table a, and the corresponding
-	 * transient_timeout record from table b.
-	 */
+	// Clear expired transients
 
-    /* PN -- Disable multi-table delete until we can work through the SQL
-	$time = time();
-	$sql = "DELETE a, b FROM $wpdb->options a, $wpdb->options b
-		WHERE a.option_name LIKE %s
-		AND a.option_name NOT LIKE %s
-		AND b.option_name = CONCAT( '_transient_timeout_', SUBSTRING( a.option_name, 12 ) )
-		AND b.option_value < %d";
-	$wpdb->query( $wpdb->prepare( $sql, $wpdb->esc_like( '_transient_' ) . '%', $wpdb->esc_like( '_transient_timeout_' ) . '%', $time ) );
-
-	if ( is_main_site() && is_main_network() ) {
-		$sql = "DELETE a, b FROM $wpdb->options a, $wpdb->options b
-			WHERE a.option_name LIKE %s
-			AND a.option_name NOT LIKE %s
-			AND b.option_name = CONCAT( '_site_transient_timeout_', SUBSTRING( a.option_name, 17 ) )
-			AND b.option_value < %d";
-		$wpdb->query( $wpdb->prepare( $sql, $wpdb->esc_like( '_site_transient_' ) . '%', $wpdb->esc_like( '_site_transient_timeout_' ) . '%', $time ) );
-	}
-    */
+	delete_expired_transients( true );
 }
 
 /**
@@ -695,7 +684,7 @@ function populate_roles_160() {
 	add_role('subscriber', 'Subscriber');
 
 	// Add caps for Administrator role
-	$role =& get_role('administrator');
+	$role = get_role('administrator');
 	$role->add_cap('switch_themes');
 	$role->add_cap('edit_themes');
 	$role->add_cap('activate_plugins');
@@ -728,7 +717,7 @@ function populate_roles_160() {
 	$role->add_cap('level_0');
 
 	// Add caps for Editor role
-	$role =& get_role('editor');
+	$role = get_role('editor');
 	$role->add_cap('moderate_comments');
 	$role->add_cap('manage_categories');
 	$role->add_cap('manage_links');
@@ -750,7 +739,7 @@ function populate_roles_160() {
 	$role->add_cap('level_0');
 
 	// Add caps for Author role
-	$role =& get_role('author');
+	$role = get_role('author');
 	$role->add_cap('upload_files');
 	$role->add_cap('edit_posts');
 	$role->add_cap('edit_published_posts');
@@ -761,14 +750,14 @@ function populate_roles_160() {
 	$role->add_cap('level_0');
 
 	// Add caps for Contributor role
-	$role =& get_role('contributor');
+	$role = get_role('contributor');
 	$role->add_cap('edit_posts');
 	$role->add_cap('read');
 	$role->add_cap('level_1');
 	$role->add_cap('level_0');
 
 	// Add caps for Subscriber role
-	$role =& get_role('subscriber');
+	$role = get_role('subscriber');
 	$role->add_cap('read');
 	$role->add_cap('level_0');
 }
@@ -781,7 +770,7 @@ function populate_roles_160() {
 function populate_roles_210() {
 	$roles = array('administrator', 'editor');
 	foreach ($roles as $role) {
-		$role =& get_role($role);
+		$role = get_role($role);
 		if ( empty($role) )
 			continue;
 
@@ -802,19 +791,19 @@ function populate_roles_210() {
 		$role->add_cap('read_private_pages');
 	}
 
-	$role =& get_role('administrator');
+	$role = get_role('administrator');
 	if ( ! empty($role) ) {
 		$role->add_cap('delete_users');
 		$role->add_cap('create_users');
 	}
 
-	$role =& get_role('author');
+	$role = get_role('author');
 	if ( ! empty($role) ) {
 		$role->add_cap('delete_posts');
 		$role->add_cap('delete_published_posts');
 	}
 
-	$role =& get_role('contributor');
+	$role = get_role('contributor');
 	if ( ! empty($role) ) {
 		$role->add_cap('delete_posts');
 	}
@@ -826,7 +815,7 @@ function populate_roles_210() {
  * @since 2.3.0
  */
 function populate_roles_230() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'unfiltered_upload' );
@@ -839,7 +828,7 @@ function populate_roles_230() {
  * @since 2.5.0
  */
 function populate_roles_250() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'edit_dashboard' );
@@ -852,7 +841,7 @@ function populate_roles_250() {
  * @since 2.6.0
  */
 function populate_roles_260() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'update_plugins' );
@@ -866,7 +855,7 @@ function populate_roles_260() {
  * @since 2.7.0
  */
 function populate_roles_270() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'install_plugins' );
@@ -880,7 +869,7 @@ function populate_roles_270() {
  * @since 2.8.0
  */
 function populate_roles_280() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'install_themes' );
@@ -893,7 +882,7 @@ function populate_roles_280() {
  * @since 3.0.0
  */
 function populate_roles_300() {
-	$role =& get_role( 'administrator' );
+	$role = get_role( 'administrator' );
 
 	if ( !empty( $role ) ) {
 		$role->add_cap( 'update_core' );
@@ -942,9 +931,9 @@ endif;
  * @param string $email             Email address for the network administrator.
  * @param string $site_name         The name of the network.
  * @param string $path              Optional. The path to append to the network's domain name. Default '/'.
- * @param bool   $subdomain_install Optional. Whether the network is a subdomain install or a subdirectory install.
- *                                  Default false, meaning the network is a subdirectory install.
- * @return bool|WP_Error True on success, or WP_Error on warning (with the install otherwise successful,
+ * @param bool   $subdomain_install Optional. Whether the network is a subdomain installation or a subdirectory installation.
+ *                                  Default false, meaning the network is a subdirectory installation.
+ * @return bool|WP_Error True on success, or WP_Error on warning (with the installation otherwise successful,
  *                       so the error code must be checked) or failure.
  */
 function populate_network( $network_id = 1, $domain = '', $email = '', $site_name = '', $path = '/', $subdomain_install = false ) {
@@ -957,24 +946,48 @@ function populate_network( $network_id = 1, $domain = '', $email = '', $site_nam
 		$errors->add( 'empty_sitename', __( 'You must provide a name for your network of sites.' ) );
 
 	// Check for network collision.
-	if ( $network_id == $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $wpdb->site WHERE id = %d", $network_id ) ) )
-		$errors->add( 'siteid_exists', __( 'The network already exists.' ) );
+	$network_exists = false;
+	if ( is_multisite() ) {
+		if ( get_network( (int) $network_id ) ) {
+			$errors->add( 'siteid_exists', __( 'The network already exists.' ) );
+		}
+	} else {
+		if ( $network_id == $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $wpdb->site WHERE id = %d", $network_id ) ) ) {
+			$errors->add( 'siteid_exists', __( 'The network already exists.' ) );
+		}
+	}
 
-	$site_user = get_user_by( 'email', $email );
 	if ( ! is_email( $email ) )
-		$errors->add( 'invalid_email', __( 'You must provide a valid e-mail address.' ) );
+		$errors->add( 'invalid_email', __( 'You must provide a valid email address.' ) );
 
 	if ( $errors->get_error_code() )
 		return $errors;
+
+	// If a user with the provided email does not exist, default to the current user as the new network admin.
+	$site_user = get_user_by( 'email', $email );
+	if ( false === $site_user ) {
+		$site_user = wp_get_current_user();
+	}
 
 	// Set up site tables.
 	$template = get_option( 'template' );
 	$stylesheet = get_option( 'stylesheet' );
 	$allowed_themes = array( $stylesheet => true );
-	if ( $template != $stylesheet )
+
+	if ( $template != $stylesheet ) {
 		$allowed_themes[ $template ] = true;
-	if ( WP_DEFAULT_THEME != $stylesheet && WP_DEFAULT_THEME != $template )
+	}
+
+	if ( WP_DEFAULT_THEME != $stylesheet && WP_DEFAULT_THEME != $template ) {
 		$allowed_themes[ WP_DEFAULT_THEME ] = true;
+	}
+
+	// If WP_DEFAULT_THEME doesn't exist, also whitelist the latest core default theme.
+	if ( ! wp_get_theme( WP_DEFAULT_THEME )->exists() ) {
+		if ( $core_default = WP_Theme::get_core_default_theme() ) {
+			$allowed_themes[ $core_default->get_stylesheet() ] = true;
+		}
+	}
 
 	if ( 1 == $network_id ) {
 		$wpdb->insert( $wpdb->site, array( 'domain' => $domain, 'path' => $path ) );
